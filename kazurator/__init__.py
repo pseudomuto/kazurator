@@ -1,1 +1,1 @@
-from .locks import InterProcessMutex
+from .mutex import InterProcessMutex  # noqa[F401]

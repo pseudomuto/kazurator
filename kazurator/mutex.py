@@ -1,7 +1,7 @@
 import uuid
 from kazoo.exceptions import LockTimeout, NoNodeError
 from kazoo.retry import KazooRetry, RetryFailedError
-from kazurator.utils import retryable
+from .utils import retryable
 
 DEFAULT_LOCK_NAME = "lock-"
 DEFAULT_TIMEOUT = 2.0
