@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+
+cleanup() {
+  if [[ $(docker ps | grep -e "\bkz_zk$") ]]; then
+    docker rm --force kz_zk
+  fi
+}
+
+trap cleanup SIGINT SIGTERM
+
+cleanup
+echo -n "Starting zookeeper container..."
+docker run -d -p 2181:2181 --name kz_zk pseudomuto/alpine-zookeeper:0.1.0 >/dev/null
+sleep 1 # give zk a chance to be "up"
+echo "done."
+
+NOSE_NOCAPTURE=1 $* # pass everything else to venv
+cleanup
