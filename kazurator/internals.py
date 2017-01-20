@@ -1,3 +1,4 @@
+import uuid
 from kazoo.exceptions import LockTimeout, NoNodeError, NotEmptyError
 from os.path import join
 from .utils import mutex
@@ -5,6 +6,19 @@ from .utils import mutex
 
 def make_path(*paths):
     return join("/", *paths)
+
+
+# SHAMELESS THEFT FROM CURATOR:
+#  It turns out there is an edge case that exists when creating
+#  sequential-ephemeral nodes. The creation can succeed on the server, but the
+#  server can crash before the created node name is returned to the client.
+#  However, the ZK session is still valid so the ephemeral node is not deleted.
+#  Thus, there is no way for the client to determine what node was created for
+#  them.
+def protect(path):
+    parts = path.split("/")
+    parts[-1] = "_c_{}-{}".format(uuid.uuid4(), parts[-1])
+    return "/".join(parts)
 
 
 class LockInternals:
@@ -152,7 +166,7 @@ class LockInternalsDriver:
 
     def create_lock(self, client, path):
         return client.create(
-            path,
+            protect(path),
             ephemeral=True,
             makepath=True,
             sequence=True

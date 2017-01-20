@@ -5,6 +5,12 @@ from unittest import TestCase
 from .utils import kazoo_client
 
 
+def test_make_path():
+    assert make_path("a", "b", "c") == "/a/b/c"
+    assert make_path("a") == "/a"
+    assert make_path("abc", "000") == "/abc/000"
+
+
 class TestLockInternals(TestCase):
     def setUp(self):
         self.driver = LockInternalsDriver()
@@ -80,16 +86,14 @@ class TestLockInternals(TestCase):
             assert True  # just making sure we get here
 
     def test_get_sorted_children_returns_sorted_child_paths(self):
-        path = "/a/b/c"
-
-        with self.internals("__READ__", path=path) as (client, lock):
-            lock.driver.create_lock(client, make_path(path, "__READ__"))
-            lock.driver.create_lock(client, make_path(path, "__READ__"))
+        with self.internals("__READ__") as (client, lock):
+            lock.driver.create_lock(client, make_path(self.path, "__READ__"))
+            lock.driver.create_lock(client, make_path(self.path, "__READ__"))
 
             children = lock.get_sorted_children()
             assert len(children) == 2
-            assert children[0] == "__READ__0000000000"
-            assert children[1] == "__READ__0000000001"
+            assert children[0].endswith("__READ__0000000000")
+            assert children[1].endswith("__READ__0000000001")
 
     def test_get_participant_nodes(self):
         with self.internals("__READ__") as (client, lock):
@@ -98,8 +102,8 @@ class TestLockInternals(TestCase):
 
             nodes = lock.get_participant_nodes()
             assert len(nodes) == 2
-            assert nodes[0] == make_path(self.path, "__READ__0000000000")
-            assert nodes[1] == make_path(self.path, "__READ__0000000001")
+            assert nodes[0].endswith("__READ__0000000000")
+            assert nodes[1].endswith("__READ__0000000001")
 
 
 class TestLockInternalsDriver(TestCase):

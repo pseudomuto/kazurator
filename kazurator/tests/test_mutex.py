@@ -30,7 +30,7 @@ class TestInterProcessMutex(TestCase):
     def test_initialization(self):
         with kazoo_client() as client:
             mutex = self._create_mutex(client)
-            assert mutex.name == "__READ__"
+            assert mutex.name.endswith("__READ__")
             assert mutex.path == self.path
 
     def test_is_owned_by_current_thread_when_owned(self):
