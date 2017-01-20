@@ -21,6 +21,10 @@ class LockInternals:
         self._watch_handle = client.handler.event_object()
 
     @property
+    def client(self):
+        return self._client
+
+    @property
     def driver(self):
         return self._driver
 
@@ -63,6 +67,11 @@ class LockInternals:
             pass
         except NotEmptyError:
             pass
+
+    def get_participant_nodes(self):
+        children = self.get_sorted_children()
+        nodes = map(lambda child: make_path(self._base_path, child), children)
+        return list(nodes)
 
     def get_sorted_children(self):
         def sortkey(path):

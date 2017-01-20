@@ -1,24 +1,26 @@
-from kazoo.client import KazooClient
 from kazoo.exceptions import LockTimeout
 from kazurator import InterProcessMutex
 from sys import maxsize
+from threading import Thread, ThreadError
 from unittest import TestCase
+from .utils import kazoo_client
 
 
 class TestInterProcessMutex(TestCase):
     def setUp(self):
-        self.client = KazooClient(hosts="127.0.0.1:2181")
-        self.client.start()
-
         self.path = "/haderp/some_path"
 
     def tearDown(self):
-        self.client.delete(self.path, recursive=True)
-        self.client.stop()
+        with kazoo_client() as client:
+            client.delete(self.path, recursive=True)
 
-    def create_mutex(self, name="__READ__", max_leases=maxsize, timeout=0.5):
+    def _create_mutex(self, client, **kwargs):
+        name = kwargs.get("name", "__READ__")
+        max_leases = kwargs.get("max_leases", maxsize)
+        timeout = kwargs.get("timeout", 0.5)
+
         return InterProcessMutex(
-            self.client,
+            client,
             self.path,
             max_leases,
             name=name,
@@ -26,47 +28,72 @@ class TestInterProcessMutex(TestCase):
         )
 
     def test_initialization(self):
-        mutex = self.create_mutex()
-        assert mutex.name == "__READ__"
-        assert mutex.path == self.path
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
+            assert mutex.name == "__READ__"
+            assert mutex.path == self.path
+
+    def test_is_owned_by_current_thread_when_owned(self):
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
+            with mutex:
+                assert mutex.is_owned_by_current_thread
+
+    def test_is_owned_by_current_thread_when_owned_by_another_thread(self):
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
+
+            # the owning thread
+            thread = Thread(target=mutex.acquire)
+            thread.start()
+            thread.join()
+
+            assert not mutex.is_owned_by_current_thread
 
     def test_acquire_marks_the_mutex_as_acquired(self):
-        mutex = self.create_mutex()
-        assert not mutex.is_acquired
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
+            assert not mutex.is_acquired
 
-        with mutex:
-            assert mutex.is_acquired
-
-    def test_acquire_ensures_the_container_node_exists(self):
-        assert not self.client.exists(self.path)
-
-        mutex = self.create_mutex()
-
-        with mutex:
-            assert self.client.exists(self.path)
+            with mutex:
+                assert mutex.is_acquired
 
     def test_acquire_is_reentrant(self):
-        mutex = self.create_mutex()
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
 
-        with mutex:
-            assert len(self.client.get_children(self.path)) == 1
+            with mutex:
+                assert len(client.get_children(self.path)) == 1
+                assert mutex.acquire()
+                mutex.release()
 
-            with mutex:  # re-enter
-                assert len(self.client.get_children(self.path)) == 2
-
-        assert not mutex.is_acquired
+            assert not mutex.is_acquired
 
     def test_acquire_blocks_when_max_leases_reached(self):
-        mutex = self.create_mutex(max_leases=1)
-        with mutex:
-            with self.assertRaises(LockTimeout):
-                mutex.acquire()  # should timeout
+        with kazoo_client() as client:
+            first = self._create_mutex(client, max_leases=1)
+            second = self._create_mutex(client, max_leases=1)
+
+            with first:
+                with self.assertRaises(LockTimeout):
+                    second.acquire()  # should timeout
 
     def test_release_releases_the_lock(self):
-        mutex = self.create_mutex()
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
 
-        mutex.acquire()
-        assert mutex.is_acquired
+            mutex.acquire()
+            assert mutex.is_acquired
 
-        mutex.release()
-        assert not mutex.is_acquired
+            mutex.release()
+            assert not mutex.is_acquired
+
+    def test_release_raises_thread_error_when_lock_not_acquired(self):
+        with kazoo_client() as client:
+            mutex = self._create_mutex(client)
+            message = "You do not own the lock: " + self.path
+
+            with self.assertRaises(ThreadError) as err:
+                mutex.release()
+
+            assert str(err.exception) == message

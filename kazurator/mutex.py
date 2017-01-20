@@ -1,29 +1,50 @@
-import uuid
-from kazoo.exceptions import LockTimeout, NoNodeError
-from kazoo.retry import KazooRetry, RetryFailedError
-from .utils import retryable
+from threading import current_thread, Lock, ThreadError
+from .internals import LockInternals, LockInternalsDriver
+from .utils import mutex
 
 DEFAULT_LOCK_NAME = "lock-"
-DEFAULT_TIMEOUT = 2.0
+DEFAULT_TIMEOUT = 1.0
+
+
+class _LockData:
+    def __init__(self, path):
+        self._count = 1
+        self._lock = Lock()
+        self._path = path
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def count(self):
+        with mutex(self._lock):
+            return self._count
+
+    def increment(self):
+        with mutex(self._lock):
+            self._count += 1
+            return self._count
+
+    def decrement(self):
+        with mutex(self._lock):
+            self._count -= 1
+            return self._count
 
 
 class InterProcessMutex:
-    def __init__(self, client, path, max_leases, **kwargs):
-        self._name = kwargs.get("name", DEFAULT_LOCK_NAME)
+    def __init__(self, client, path, max_leases=1, **kwargs):
+        self._lock = client.handler.lock_object()
+        self._path = path
+        self._thread_data = {}
         self._timeout = kwargs.get("timeout", DEFAULT_TIMEOUT)
 
-        self._attempted = False
-        self._client = client
-        self._create_path = path + "/" + uuid.uuid4().hex + "-" + self._name
-        self._event = client.handler.event_object()
-        self._lock = client.handler.lock_object()
-        self._max_leases = max_leases
-        self._nodes = []
-        self._path = path
-
-        self._retry = KazooRetry(
-            max_tries=kwargs.get("max_tries", None),
-            sleep_func=client.handler.sleep_func
+        self._internals = LockInternals(
+            client,
+            kwargs.get("driver", LockInternalsDriver()),
+            path,
+            kwargs.get("name", DEFAULT_LOCK_NAME),
+            max_leases
         )
 
     def __enter__(self):
@@ -34,7 +55,7 @@ class InterProcessMutex:
 
     @property
     def name(self):
-        return self._name
+        return self._internals.name
 
     @property
     def path(self):
@@ -42,102 +63,54 @@ class InterProcessMutex:
 
     @property
     def is_acquired(self):
-        return len(self._nodes) > 0
+        return len(self._thread_data) > 0
 
     @property
-    def _current_node(self):
-        if len(self._nodes) == 0:
-            return None
+    def is_owned_by_current_thread(self):
+        with mutex(self._lock):
+            data = self._thread_data.get(current_thread())
+            return data and data.count > 0
 
-        return self._nodes[-1]
-
-    @property
-    def _mutex(self):
-        return retryable(self._lock, self._retry, self._timeout)
+    def get_participant_nodes(self):
+        return self._internals.get_participant_nodes()
 
     def acquire(self):
-        with self._mutex as locked:
-            if not locked:
-                return False
+        thread = current_thread()
 
-            acquired = False
-            retry = self._retry.copy()
+        with mutex(self._lock):
+            data = self._thread_data.get(thread)
 
-            try:
-                acquired = retry(self._acquire_znode)
-                self._attempted = False
-            except RetryFailedError:
-                pass
-
-            return acquired
-
-    def release(self):
-        with self._mutex as locked:
-            if not locked:
-                return False
-
-            return self._retry(self._release_znode)
-
-    def _ensure_path(self):
-        if hasattr(self, '__ensure_path'):
-            return
-
-        self._client.ensure_path(self.path)
-        self.__ensure_path = True
-
-    def _acquire_znode(self):
-        self._ensure_path()
-
-        node = self._current_node if self._attempted else None
-
-        if not node:
-            self._attempted = True
-
-            node = self._client.create(
-                self._create_path,
-                ephemeral=True,
-                sequence=True
-            )
-
-            # strip path from the node
-            self._nodes.append(node[len(self.path) + 1:])
-
-        while True:
-            children = self._get_sorted_children()
-            if len(children) <= self._max_leases:
+            if data:
+                # re-entering
+                data.increment()
                 return True
 
-            self._client.add_listener(self._wait)
-            try:
-                self._event.wait(self._timeout)
+            path = self._internals.attempt_lock(self._timeout)
+            if not path:
+                return False
 
-                if not self._event.isSet():
-                    raise LockTimeout(
-                        "Failed to acquire lock on %s after %s seconds"
-                        % (self.path, self._timeout)
-                    )
-            finally:
-                self._client.remove_listener(self._wait)
+            self._thread_data[thread] = _LockData(path)
+            return True
 
-    def _wait(self, _state):
-        self._event.set()
-        return True
+    def release(self):
+        thread = current_thread()
 
-    def _release_znode(self):
-        if not self.is_acquired:
-            return False
+        with mutex(self._lock):
+            data = self._thread_data.get(thread)
+            path = self._path
 
-        try:
-            self._client.delete(self.path + "/" + self._nodes.pop())
-        except NoNodeError:
-            pass
+            if not data:
+                raise ThreadError("You do not own the lock: " + path)
 
-        return True
+            count = data.decrement()
 
-    def _get_sorted_children(self):
-        def sort_key(node):
-            return node[node.find(self.name) + len(self.name):]
+            # I'm not 100% sure this can happen...so this might be a little
+            # over-defensive
+            if count < 0:
+                raise ThreadError("Lock count has gone negative: " + path)
 
-        children = self._client.get_children(self.path)
-        children.sort(key=sort_key)
-        return children
+            if count == 0:
+                try:
+                    self._internals.release_lock(data.path)
+                finally:
+                    del self._thread_data[thread]

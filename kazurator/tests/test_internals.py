@@ -30,7 +30,8 @@ class TestLockInternals(TestCase):
             yield (client, internals)
 
     def test_initialization(self):
-        with self.internals("__READ__") as (_, lock):
+        with self.internals("__READ__") as (client, lock):
+            assert lock.client is client
             assert lock.name == "__READ__"
             assert lock.max_leases == 100
             assert lock.path == make_path(self.path, "__READ__")
@@ -89,6 +90,16 @@ class TestLockInternals(TestCase):
             assert len(children) == 2
             assert children[0] == "__READ__0000000000"
             assert children[1] == "__READ__0000000001"
+
+    def test_get_participant_nodes(self):
+        with self.internals("__READ__") as (client, lock):
+            lock.driver.create_lock(client, make_path(self.path, "__READ__"))
+            lock.driver.create_lock(client, make_path(self.path, "__READ__"))
+
+            nodes = lock.get_participant_nodes()
+            assert len(nodes) == 2
+            assert nodes[0] == make_path(self.path, "__READ__0000000000")
+            assert nodes[1] == make_path(self.path, "__READ__0000000001")
 
 
 class TestLockInternalsDriver(TestCase):
