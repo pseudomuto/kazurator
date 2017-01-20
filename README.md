@@ -1,5 +1,7 @@
 # kazurator
 
+[![Build Status](https://travis-ci.org/pseudomuto/kazurator.svg?branch=master)](https://travis-ci.org/pseudomuto/kazurator)
+
 A python port of the [Shared Reentrant Read Write Lock] recipe from [curator]. This package dependends on [kazoo] for
 handling the zookeeper bits.
 
@@ -91,7 +93,7 @@ def main():
 
 ## Development
 
-* Clone this repo and `pip install -r requirements/dev.txt`
+* Clone this repo and `pip install -r requirements.txt`
 * Run tests `script/test nosetests`
 
 Running the tests will spawn a docker container to run zookeeper in. It will be shutdown automatically at the end of the
