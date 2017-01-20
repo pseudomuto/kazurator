@@ -1,5 +1,5 @@
-from threading import current_thread, Lock, ThreadError
-from .internals import LockInternals, LockInternalsDriver
+from threading import current_thread, Lock as ThreadLock, ThreadError
+from .internals import Lock, LockDriver
 from .utils import mutex
 
 DEFAULT_LOCK_NAME = "lock-"
@@ -9,7 +9,7 @@ DEFAULT_TIMEOUT = 1.0
 class _LockData:
     def __init__(self, path):
         self._count = 1
-        self._lock = Lock()
+        self._lock = ThreadLock()
         self._path = path
 
     @property
@@ -32,16 +32,16 @@ class _LockData:
             return self._count
 
 
-class InterProcessMutex:
+class Mutex:
     def __init__(self, client, path, max_leases=1, **kwargs):
-        self._lock = client.handler.lock_object()
         self._path = path
+        self._sync_lock = client.handler.lock_object()
         self._thread_data = {}
         self._timeout = kwargs.get("timeout", DEFAULT_TIMEOUT)
 
-        self._internals = LockInternals(
+        self._lock = Lock(
             client,
-            kwargs.get("driver", LockInternalsDriver()),
+            kwargs.get("driver", LockDriver()),
             path,
             kwargs.get("name", DEFAULT_LOCK_NAME),
             max_leases
@@ -55,7 +55,7 @@ class InterProcessMutex:
 
     @property
     def name(self):
-        return self._internals.name
+        return self._lock.name
 
     @property
     def path(self):
@@ -67,17 +67,17 @@ class InterProcessMutex:
 
     @property
     def is_owned_by_current_thread(self):
-        with mutex(self._lock):
+        with mutex(self._sync_lock):
             data = self._thread_data.get(current_thread())
             return data and data.count > 0
 
     def get_participant_nodes(self):
-        return self._internals.get_participant_nodes()
+        return self._lock.get_participant_nodes()
 
     def acquire(self):
         thread = current_thread()
 
-        with mutex(self._lock):
+        with mutex(self._sync_lock):
             data = self._thread_data.get(thread)
 
             if data:
@@ -85,7 +85,7 @@ class InterProcessMutex:
                 data.increment()
                 return True
 
-            path = self._internals.attempt_lock(self._timeout)
+            path = self._lock.attempt_lock(self._timeout)
             if not path:
                 return False
 
@@ -95,7 +95,7 @@ class InterProcessMutex:
     def release(self):
         thread = current_thread()
 
-        with mutex(self._lock):
+        with mutex(self._sync_lock):
             data = self._thread_data.get(thread)
             path = self._path
 
@@ -111,6 +111,6 @@ class InterProcessMutex:
 
             if count == 0:
                 try:
-                    self._internals.release_lock(data.path)
+                    self._lock.release_lock(data.path)
                 finally:
                     del self._thread_data[thread]

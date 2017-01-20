@@ -1,5 +1,7 @@
 .dev/
 .tox/
 .venv/
+build/
+dist/
 kazurator.egg-info/
 *.py[co]

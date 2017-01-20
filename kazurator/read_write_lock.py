@@ -1,14 +1,14 @@
 from kazoo.exceptions import NoNodeError
 from sys import maxsize
-from .mutex import InterProcessMutex
-from .internals import LockInternalsDriver
+from .mutex import Mutex
+from .internals import LockDriver
 from .utils import lazyproperty
 
 READ_LOCK_NAME = "__READ__"
 WRITE_LOCK_NAME = "__WRIT__"
 
 
-class _LockDriver(LockInternalsDriver):
+class _LockDriver(LockDriver):
     def sort_key(self, string, _lock_name):
         string = super().sort_key(string, READ_LOCK_NAME)
         string = super().sort_key(string, WRITE_LOCK_NAME)
@@ -24,7 +24,7 @@ class _ReadLockDriver(_LockDriver):
         return self._predicate(children, sequence_node_name)
 
 
-class _Mutex(InterProcessMutex):
+class _Mutex(Mutex):
     def __init__(self, client, path, name, max_leases, driver, timeout):
         super().__init__(
             client,
@@ -39,7 +39,7 @@ class _Mutex(InterProcessMutex):
         return list(filter(lambda node: self.name in node, nodes))
 
 
-class InterProcessReadWriteLock:
+class ReadWriteLock:
     def __init__(self, client, path, timeout=None):
         self._client = client
         self._path = path

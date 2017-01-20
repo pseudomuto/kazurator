@@ -1,19 +1,14 @@
 from contextlib import contextmanager
 from kazoo.exceptions import LockTimeout, NoNodeError
-from kazurator.internals import LockInternals, LockInternalsDriver, make_path
+from kazurator.internals import Lock, LockDriver
+from kazurator.utils import make_path
 from unittest import TestCase
-from .utils import kazoo_client
+from . import kazoo_client
 
 
-def test_make_path():
-    assert make_path("a", "b", "c") == "/a/b/c"
-    assert make_path("a") == "/a"
-    assert make_path("abc", "000") == "/abc/000"
-
-
-class TestLockInternals(TestCase):
+class TestLock(TestCase):
     def setUp(self):
-        self.driver = LockInternalsDriver()
+        self.driver = LockDriver()
         self.path = "/haderp/some_lock_path"
 
     def tearDown(self):
@@ -25,7 +20,7 @@ class TestLockInternals(TestCase):
         path = path if path else self.path
 
         with kazoo_client() as client:
-            internals = LockInternals(
+            internals = Lock(
                 client,
                 self.driver,
                 path,
@@ -106,9 +101,9 @@ class TestLockInternals(TestCase):
             assert nodes[1].endswith("__READ__0000000001")
 
 
-class TestLockInternalsDriver(TestCase):
+class TestLockDriver(TestCase):
     def setUp(self):
-        self.driver = LockInternalsDriver()
+        self.driver = LockDriver()
 
     def test_is_acquirable_returns_true_when_acquirable(self):
         children = ["000000", "000001"]

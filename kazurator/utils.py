@@ -1,5 +1,10 @@
 from contextlib import contextmanager
 from kazoo.retry import ForceRetryError, RetryFailedError
+from os.path import join
+
+
+def make_path(*paths):
+    return join("/", *paths)
 
 
 class lazyproperty:

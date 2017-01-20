@@ -1,12 +1,12 @@
 from kazoo.exceptions import LockTimeout
-from kazurator import InterProcessMutex
+from kazurator import Mutex
 from sys import maxsize
 from threading import Thread, ThreadError
 from unittest import TestCase
-from .utils import kazoo_client
+from . import kazoo_client
 
 
-class TestInterProcessMutex(TestCase):
+class TestMutex(TestCase):
     def setUp(self):
         self.path = "/haderp/some_path"
 
@@ -19,7 +19,7 @@ class TestInterProcessMutex(TestCase):
         max_leases = kwargs.get("max_leases", maxsize)
         timeout = kwargs.get("timeout", 0.5)
 
-        return InterProcessMutex(
+        return Mutex(
             client,
             self.path,
             max_leases,

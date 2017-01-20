@@ -1,0 +1,5 @@
+include LICENSE.txt
+include README.md
+recursive-include kazurator *
+
+global-exclude *pyc

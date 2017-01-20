@@ -1,11 +1,6 @@
 import uuid
 from kazoo.exceptions import LockTimeout, NoNodeError, NotEmptyError
-from os.path import join
-from .utils import mutex
-
-
-def make_path(*paths):
-    return join("/", *paths)
+from .utils import make_path, mutex
 
 
 # SHAMELESS THEFT FROM CURATOR:
@@ -15,13 +10,15 @@ def make_path(*paths):
 #  However, the ZK session is still valid so the ephemeral node is not deleted.
 #  Thus, there is no way for the client to determine what node was created for
 #  them.
-def protect(path):
+#
+#  See Curator's CreateBuilder#withProtection for more info
+def _protect(path):
     parts = path.split("/")
     parts[-1] = "_c_{}-{}".format(uuid.uuid4(), parts[-1])
     return "/".join(parts)
 
 
-class LockInternals:
+class Lock:
     _TIMEOUT_ERR = "Failed to acquire a lock on %s after %s seconds"
 
     def __init__(self, client, driver, path, name, max_leases):
@@ -153,7 +150,7 @@ class LockInternals:
         return True
 
 
-class LockInternalsDriver:
+class LockDriver:
     def is_acquirable(self, children, sequence_node_name, max_leases):
         try:
             index = children.index(sequence_node_name)
@@ -166,7 +163,7 @@ class LockInternalsDriver:
 
     def create_lock(self, client, path):
         return client.create(
-            protect(path),
+            _protect(path),
             ephemeral=True,
             makepath=True,
             sequence=True

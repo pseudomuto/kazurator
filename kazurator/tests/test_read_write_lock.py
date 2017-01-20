@@ -1,7 +1,7 @@
 from kazoo.exceptions import LockTimeout
-from kazurator import InterProcessReadWriteLock
+from kazurator import ReadWriteLock
 from unittest import TestCase
-from .utils import kazoo_client
+from . import kazoo_client
 
 
 class TestReadWriteLock(TestCase):
@@ -13,7 +13,7 @@ class TestReadWriteLock(TestCase):
             client.delete(self.path, recursive=True)
 
     def _create_lock(self, client, timeout=0.5):
-        return InterProcessReadWriteLock(client, self.path, timeout)
+        return ReadWriteLock(client, self.path, timeout)
 
     def test_read_and_write_locks_are_memoized(self):
         with kazoo_client() as client:
