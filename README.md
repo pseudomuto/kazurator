@@ -91,7 +91,7 @@ def main():
 
 ## Development
 
-* Clone this repo and `pip install -r requirements/dev.txt`
+* Clone this repo and `pip install -r requirements.txt`
 * Run tests `script/test nosetests`
 
 Running the tests will spawn a docker container to run zookeeper in. It will be shutdown automatically at the end of the
