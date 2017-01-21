@@ -10,14 +10,14 @@ WRITE_LOCK_NAME = "__WRIT__"
 
 class _LockDriver(LockDriver):
     def sort_key(self, string, _lock_name):
-        string = super().sort_key(string, READ_LOCK_NAME)
-        string = super().sort_key(string, WRITE_LOCK_NAME)
+        string = super(_LockDriver, self).sort_key(string, READ_LOCK_NAME)
+        string = super(_LockDriver, self).sort_key(string, WRITE_LOCK_NAME)
         return string
 
 
 class _ReadLockDriver(_LockDriver):
     def __init__(self, predicate):
-        super().__init__()
+        super(_ReadLockDriver, self).__init__()
         self._predicate = predicate
 
     def is_acquirable(self, children, sequence_node_name, max_leases):
@@ -26,7 +26,7 @@ class _ReadLockDriver(_LockDriver):
 
 class _Mutex(Mutex):
     def __init__(self, client, path, name, max_leases, driver, timeout):
-        super().__init__(
+        super(_Mutex, self).__init__(
             client,
             path,
             max_leases,
@@ -35,11 +35,11 @@ class _Mutex(Mutex):
         )
 
     def get_participant_nodes(self):
-        nodes = super().get_participant_nodes()
+        nodes = super(_Mutex, self).get_participant_nodes()
         return list(filter(lambda node: self.name in node, nodes))
 
 
-class ReadWriteLock:
+class ReadWriteLock(object):
     def __init__(self, client, path, timeout=None):
         self._client = client
         self._path = path
