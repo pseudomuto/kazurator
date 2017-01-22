@@ -6,7 +6,7 @@ DEFAULT_LOCK_NAME = "lock-"
 DEFAULT_TIMEOUT = 1.0
 
 
-class _LockData:
+class _LockData(object):
     def __init__(self, path):
         self._count = 1
         self._lock = ThreadLock()
@@ -32,7 +32,7 @@ class _LockData:
             return self._count
 
 
-class Mutex:
+class Mutex(object):
     def __init__(self, client, path, max_leases=1, **kwargs):
         self._path = path
         self._sync_lock = client.handler.lock_object()

@@ -15,5 +15,5 @@ docker run -d -p 2181:2181 --name kz_zk pseudomuto/alpine-zookeeper:0.1.0 >/dev/
 sleep 1 # give zk a chance to be "up"
 echo "done."
 
-NOSE_NOCAPTURE=1 $* # pass everything else to venv
+$* # pass everything else to venv
 cleanup

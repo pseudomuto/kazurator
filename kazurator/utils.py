@@ -7,7 +7,7 @@ def make_path(*paths):
     return join("/", *paths)
 
 
-class lazyproperty:
+class lazyproperty(object):
     def __init__(self, fn):
         self._fn = fn
 

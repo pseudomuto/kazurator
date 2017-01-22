@@ -18,7 +18,7 @@ def _protect(path):
     return "/".join(parts)
 
 
-class Lock:
+class Lock(object):
     _TIMEOUT_ERR = "Failed to acquire a lock on %s after %s seconds"
 
     def __init__(self, client, driver, path, name, max_leases):
@@ -150,7 +150,7 @@ class Lock:
         return True
 
 
-class LockDriver:
+class LockDriver(object):
     def is_acquirable(self, children, sequence_node_name, max_leases):
         try:
             index = children.index(sequence_node_name)
