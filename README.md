@@ -1,6 +1,6 @@
 # kazurator
 
-[![PyPI](https://img.shields.io/pypi/v/kazurator.svg)](https://img.shields.io/pypi/v/kazurator.svg)
+[![PyPI](https://img.shields.io/pypi/v/kazurator.svg)](https://pypi.python.org/pypi/kazurator)
 [![Build Status](https://travis-ci.org/pseudomuto/kazurator.svg?branch=master)](https://travis-ci.org/pseudomuto/kazurator)
 
 A python port of the [Shared Reentrant Read Write Lock] recipe from [curator]. This package dependends on [kazoo] for
