@@ -2,7 +2,6 @@ sudo: required
 dist: trusty
 
 language: python
-
 python:
   - 2.7
 
@@ -25,7 +24,7 @@ matrix:
 
 cache:
   directories:
-    - $HOME/.cache/pip
+    - "$HOME/.cache/pip"
 
 install: pip install -r requirements.txt
 
@@ -36,9 +35,10 @@ notifications:
 
 deploy:
   provider: pypi
-  user: ${PYPI_USER}
-  password: ${PYPI_PASSWORD}
-  distributions: "sdist bdist_wheel"
+  username: pseudomuto
+  password:
+    secure: NI/9SppWxln8C5FvDyv55ScQKaqKVi+VPHb8rylw+byBQh31CNRd+GkfBjJc0hsVR3t0GEWoiPvnnBmuhWPm1SJgw1SGFOQg+EI7Lk6s4W90C9xIru3a0dwYqJk16Lu50xsf3k816x3E3xmpLoQqorhaTvuxU7pxom+ofGnV5m7xIcLwxgn7gfjHejf2wW47PnD1qbWGjiJB95/EzP9YQFSuWDkOdaKJ24QvYwIsFxGlP6oBk+WgPOd7RZcGs1as/18xn6RY2SZIHQOWF+Wc/GyqeKKb3FIZPZrhNCIoNjigFDwwpX0PJVE59LjSxzEcyyE505UU8SWXiKwsCoMJ3fGkWvT+xeHZrHVwexFpsyXy9IuU8NztHYWGGvenU3TMLykOVlmWz5c7/DD8VP7ylsIHc4NIrTAOja3H2qXaMMZj8lJWxyFWZ64sJTtDYa/1d/z/PTLIm0Y+deTIVO8yrPLoAKL+T0v3qCWLyyNA4ImHgCD18czcHZ264qN9hB5iDZZO5YQ/ekOq8H2MRUqY7Di6C0PqgxjmlR2otfYnXPOv53P35je5tNvtyCAx2z5bmHi6pRpuYFi33lgqy4NobkVQxmQLn90JyIawACDhuvAsPmkm7Vn8u51F2sKfFE+Jjvgt8G7aO+W6jzijsWwLCO5gz9n3SFkXZA81GcXifRY=
+  distributions: sdist bdist_wheel
   on:
     python: pypy
     tags: true
