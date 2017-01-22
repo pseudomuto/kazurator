@@ -33,3 +33,12 @@ script: tox -epep8,${TOX_ENV}
 
 notifications:
   email: false
+
+deploy:
+  provider: pypi
+  user: ${PYPI_USER}
+  password: ${PYPI_PASSWORD}
+  distributions: "sdist bdist_wheel"
+  on:
+    python: 2.7
+    tags: true
