@@ -40,5 +40,5 @@ deploy:
   password: ${PYPI_PASSWORD}
   distributions: "sdist bdist_wheel"
   on:
-    python: 2.7
+    python: pypy
     tags: true
