@@ -12,6 +12,7 @@ installation_requirements = [
 test_requirements = installation_requirements + [
     "flake8>=3.2.1",
     "nose>=1.3.7",
+    "pep8>=1.7.0",
     "tox>=2.3.1"
 ]
 
@@ -30,6 +31,8 @@ setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
