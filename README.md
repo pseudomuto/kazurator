@@ -1,5 +1,6 @@
 # kazurator
 
+[![PyPI](https://img.shields.io/pypi/v/kazurator.svg)](https://img.shields.io/pypi/v/kazurator.svg)
 [![Build Status](https://travis-ci.org/pseudomuto/kazurator.svg?branch=master)](https://travis-ci.org/pseudomuto/kazurator)
 
 A python port of the [Shared Reentrant Read Write Lock] recipe from [curator]. This package dependends on [kazoo] for
@@ -19,10 +20,8 @@ was running Python using [kazoo].
 
 ## Installation
 
-You can pip install directly from this repo:
-
 ```
-pip install git+https://github.com/pseudomuto/kazurator.git
+pip install kazurator==0.1.0
 ```
 
 ## Usage
