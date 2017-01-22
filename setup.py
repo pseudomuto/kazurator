@@ -20,7 +20,7 @@ setup(
     name="kazurator",
     author="David Muto (pseudomuto)",
     author_email="david.muto@gmail.com",
-    version="0.1.0",
+    version="0.1.1",
     description="Inter process lock recipes that play nice with curator",
     long_description=README,
     url="https://github.com/pseudomuto/kazurator",
