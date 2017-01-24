@@ -15,6 +15,22 @@ class TestReadWriteLock(TestCase):
     def _create_lock(self, client, timeout=0.5):
         return ReadWriteLock(client, self.path, timeout)
 
+    def test_initialization(self):
+        with kazoo_client() as client:
+            lock = self._create_lock(client, timeout=20.0)
+            assert lock.timeout == 20.0
+            assert lock.read_lock.timeout == 20.0
+            assert lock.write_lock.timeout == 20.0
+
+    def test_setting_timeout_sets_value_on_locks(self):
+        with kazoo_client() as client:
+            lock = self._create_lock(client, timeout=20.0)
+            assert lock.timeout == 20.0
+
+            lock.timeout = 50.0
+            assert lock.read_lock.timeout == 50.0
+            assert lock.write_lock.timeout == 50.0
+
     def test_read_and_write_locks_are_memoized(self):
         with kazoo_client() as client:
             lock = self._create_lock(client)
@@ -76,3 +92,30 @@ class TestReadWriteLock(TestCase):
             with reader.read_lock:
                 with self.assertRaises(LockTimeout):
                     writer.write_lock.acquire()  # should timeout
+
+    def test_get_participant_nodes_includes_read_locks(self):
+        with kazoo_client() as client:
+            reader_one = self._create_lock(client)
+            reader_two = self._create_lock(client)
+
+            with reader_one.read_lock:
+                with reader_two.read_lock:
+                    nodes = reader_one.get_participant_nodes()
+                    assert len(nodes) == 2
+
+                    assert nodes[0].startswith(self.path)
+                    assert nodes[0].endswith("__READ__0000000000")
+
+                    assert nodes[1].startswith(self.path)
+                    assert nodes[1].endswith("__READ__0000000001")
+
+    def test_get_participant_nodes_includes_write_lock(self):
+        with kazoo_client() as client:
+            writer = self._create_lock(client)
+
+            with writer.write_lock:
+                    nodes = writer.get_participant_nodes()
+                    assert len(nodes) == 1
+
+                    assert nodes[0].startswith(self.path)
+                    assert nodes[0].endswith("__WRIT__0000000000")

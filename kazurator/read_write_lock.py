@@ -31,7 +31,8 @@ class _Mutex(Mutex):
             path,
             max_leases,
             name=name,
-            driver=driver
+            driver=driver,
+            timeout=timeout
         )
 
     def get_participant_nodes(self):
@@ -52,6 +53,12 @@ class ReadWriteLock(object):
     @property
     def timeout(self):
         return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        self._timeout = value
+        self.read_lock.timeout = value
+        self.write_lock.timeout = value
 
     @lazyproperty
     def read_lock(self):
@@ -80,6 +87,11 @@ class ReadWriteLock(object):
             _LockDriver(),
             self.timeout
         )
+
+    def get_participant_nodes(self):
+        nodes = self.read_lock.get_participant_nodes()
+        nodes.extend(self.write_lock.get_participant_nodes())
+        return nodes
 
     def _read_is_acquirable_predicate(self, children, sequence_node_name):
         if self.write_lock.is_owned_by_current_thread:

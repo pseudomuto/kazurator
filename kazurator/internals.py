@@ -51,7 +51,7 @@ class Lock(object):
     def max_leases(self):
         return self._max_leases
 
-    def attempt_lock(self, timeout=0.2):
+    def attempt_lock(self, timeout=None):
         path = None
         finished = False
         lock_acquired = False
@@ -119,7 +119,10 @@ class Lock(object):
                 with mutex(self._lock):
                     try:
                         if self._client.exists(path_to_watch, self._watcher):
-                            self._watch_handle.wait(timeout)
+                            if timeout:
+                                self._watch_handle.wait(timeout)
+                            else:
+                                self._watch_handle.wait()
 
                             if not self._watch_handle.isSet():
                                 raise LockTimeout(
