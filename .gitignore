@@ -5,3 +5,8 @@ build/
 dist/
 kazurator.egg-info/
 *.py[co]
+*.whl
+
+example/curator/project/project
+example/curator/project/target
+example/curator/target
