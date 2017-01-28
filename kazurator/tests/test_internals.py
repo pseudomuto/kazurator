@@ -39,18 +39,18 @@ class TestLock(TestCase):
 
     def test_attempt_lock_returns_the_path_when_acquired(self):
         with self.internals("__READ__") as (_, lock):
-            assert lock.attempt_lock()
+            assert lock.attempt_lock(0.2)
 
     def test_attempt_lock_raises_lock_timeout_when_timeout_lapses(self):
         with self.internals("__READ__", max_leases=1) as (_, lock):
-            assert lock.attempt_lock()
+            assert lock.attempt_lock(0.2)
 
             with self.assertRaises(LockTimeout):
-                lock.attempt_lock()
+                lock.attempt_lock(0.2)
 
     def test_release_lock_deletes_the_znode(self):
         with self.internals("__READ__") as (client, lock):
-            assert lock.attempt_lock()
+            assert lock.attempt_lock(0.2)
 
             children = client.get_children(self.path)
             assert len(children) == 1

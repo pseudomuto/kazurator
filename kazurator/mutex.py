@@ -3,7 +3,6 @@ from .internals import Lock, LockDriver
 from .utils import mutex
 
 DEFAULT_LOCK_NAME = "lock-"
-DEFAULT_TIMEOUT = 1.0
 
 
 class _LockData(object):
@@ -37,7 +36,7 @@ class Mutex(object):
         self._path = path
         self._sync_lock = client.handler.lock_object()
         self._thread_data = {}
-        self._timeout = kwargs.get("timeout", DEFAULT_TIMEOUT)
+        self._timeout = kwargs.get("timeout")
 
         self._lock = Lock(
             client,
@@ -60,6 +59,14 @@ class Mutex(object):
     @property
     def path(self):
         return self._path
+
+    @property
+    def timeout(self):
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        self._timeout = value
 
     @property
     def is_acquired(self):
