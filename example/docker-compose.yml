@@ -1,0 +1,49 @@
+---
+version: "2"
+
+services:
+  zookeeper:
+    image: pseudomuto/alpine-zookeeper:0.1.0
+    container_name: zk
+    domainname: kazurator.com
+    hostname: zk
+    networks:
+      kazurator_com:
+        aliases: ["zk.kazurator.com"]
+    ports:
+      - 2181:2181
+
+  curator:
+    build:
+      context: ./curator
+    container_name: curator
+    depends_on: [zookeeper]
+    domainname: kazurator.com
+    environment:
+      ZK_CONNECT_STRING: "zk.kazurator.com:2181"
+    hostname: curator
+    networks:
+      kazurator_com:
+        aliases: ["curator.kazurator.com"]
+
+  kazoo:
+    build:
+      context: ./kazoo
+    container_name: kazoo
+    depends_on: [zookeeper]
+    domainname: kazurator.com
+    environment:
+      ZK_CONNECT_STRING: "zk.kazurator.com:2181"
+    hostname: kazoo
+    networks:
+      kazurator_com:
+        aliases: ["kazoo.kazurator.com"]
+
+networks:
+  kazurator_com:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1

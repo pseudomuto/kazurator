@@ -33,6 +33,11 @@ Usage
 There are two main use cases for this package. Both of them relate to
 creating an inter-process critical region.
 
+Example of Interop with Curator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See the example_ directory.
+
 Inter Process Mutex
 ~~~~~~~~~~~~~~~~~~~
 
@@ -115,6 +120,7 @@ will be shutdown automatically at the end of the run
 .. _Shared Reentrant Read Write Lock: http://curator.apache.org/curator-recipes/shared-reentrant-read-write-lock.html
 .. _curator: http://curator.apache.org/index.html
 .. _kazoo: https://kazoo.readthedocs.io/en/latest
+.. _example: https://github.com/pseudomuto/kazurator/tree/master/example/
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/kazurator.svg
    :target: https://pypi.python.org/pypi/kazurator

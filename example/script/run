@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+source "$(dirname $0)/_common"
+
+main() {
+  case "${1:-}" in
+    "curator")
+      docker-compose run curator 2>/dev/null;;
+    "kazoo")
+      docker-compose run kazoo 2>/dev/null;;
+    "zookeeper")
+      docker exec -it zk bin/zkCli.sh;;
+    *)
+      echo "$(_error 'Unknown service')"
+      exit 1
+  esac
+}
+
+main "$@"

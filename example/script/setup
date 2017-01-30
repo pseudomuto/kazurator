@@ -1,0 +1,50 @@
+#!/bin/bash
+set -euo pipefail
+
+source "$(dirname $0)/_common"
+
+teardown() {
+  docker-compose down >/dev/null 2>&1
+  rm -f kazoo/*.whl
+}
+
+build() {
+  echo -n "Pre-compiling scala project..."
+  cd curator && sbt assembly >/dev/null
+  echo "done."
+
+  echo -n "Building kazurator wheel..."
+  pushd "$(git rev-parse --show-toplevel)" >/dev/null
+  rm -f dist/* example/kazoo/*.whl
+  python setup.py bdist_wheel >/dev/null
+  cp dist/kazurator-* example/kazoo/
+  echo "done."
+  popd >/dev/null
+
+  docker-compose build >/dev/null
+}
+
+main() {
+  if [[ "${1:-}" == "teardown" ]]; then
+    echo -n "Shutting it all down..."
+    teardown
+    echo -e "${SUCCESS_COLOR}done${RESET_COLOR}"
+    exit 0
+  fi
+
+  if [[ ! $(which sbt) ]]; then
+    echo "$(_error 'sbt not found on the path')"
+    exit 1
+  fi
+
+  if [[ ! $(which docker-compose) ]]; then
+    echo "$(_error 'docker-compose not found on the path')"
+    exit 1
+  fi
+
+  teardown
+  build
+  echo "$(_success 'All done!')"
+}
+
+main "$@"

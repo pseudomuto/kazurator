@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+SUCCESS_COLOR="\x1b[32m"
+ERROR_COLOR="\x1b[31m"
+RESET_COLOR="\x1b[0m"
+
+HAPPY_EMOJI="🦄 "
+SAD_EMOJI="💥 "
+
+_error() {
+  echo -e "${SAD_EMOJI} ${ERROR_COLOR}${1}${RESET_COLOR}"
+}
+
+_success() {
+  echo -e "${HAPPY_EMOJI} ${SUCCESS_COLOR}${1}${RESET_COLOR}"
+}
