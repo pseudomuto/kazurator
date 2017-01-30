@@ -25,7 +25,7 @@ Installation
 
 ::
 
-    pip install kazurator==0.1.1
+    pip install kazurator==0.2.0
 
 Usage
 -----
